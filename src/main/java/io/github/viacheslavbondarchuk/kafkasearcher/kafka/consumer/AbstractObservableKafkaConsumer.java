@@ -5,9 +5,7 @@ import io.github.viacheslavbondarchuk.kafkasearcher.kafka.acknowledgement.Acknow
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.acknowledgement.BlockingAcknowledgement;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.KafkaConsumerStatus;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.KafkaConsumerSubscriber;
-import io.github.viacheslavbondarchuk.kafkasearcher.utils.CloneUtils;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.ThreadUtils;
-import io.vavr.control.Try;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
@@ -22,8 +20,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,7 +37,6 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     protected final KafkaConsumer<K, V> consumer;
     protected final Duration pollTimeout;
     protected final String topic;
-    protected final ExecutorService executor;
     protected final ErrorHandler errorHandler;
     protected final AtomicBoolean isReady = new AtomicBoolean();
     protected final AtomicLong remaining = new AtomicLong(-1);
@@ -54,7 +49,6 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
         this.consumer = new KafkaConsumer<>(config);
         this.pollTimeout = pollTimeout;
         this.topic = topic;
-        this.executor = Executors.newFixedThreadPool(2);
         this.topicMaxOffsetPair = new HashMap<>();
         this.topicCurrentOffsetPair = new HashMap<>();
         this.init();
@@ -69,15 +63,10 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
                 .forEach((partition, offset) -> topicMaxOffsetPair.put(partition, offset - 1));
     }
 
-    private void wrapInTry(KafkaConsumerSubscriber<T> subscriber, T value, Acknowledgement acknowledgement) {
-        Try.run(() -> subscriber.onNotify(CloneUtils.clone(value), acknowledgement))
-                .onFailure(errorHandler::onError);
-    }
-
     protected void notifySubscribers(T value) throws InterruptedException {
         Acknowledgement acknowledgement = new BlockingAcknowledgement(subscribers.size(), consumer::commitSync);
-        subscribers.forEach(subscriber -> executor.submit(() -> wrapInTry(subscriber, value, acknowledgement)));
-        acknowledgement.await(5, TimeUnit.MINUTES);
+        subscribers.forEach(subscriber -> subscriber.onNotify(value, acknowledgement));
+        acknowledgement.await(15, TimeUnit.SECONDS);
     }
 
     private void updateCurrentOffset(ConsumerRecords<K, V> records) {
