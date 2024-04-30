@@ -6,9 +6,7 @@
 
     <Appenders>
         <!--Console Appender-->
-        <Console name="console_appender" target="SYSTEM_OUT">
-            <JsonTemplateLayout eventTemplateUri="classpath:log4j2-layout-template.json"/>
-        </Console>
+        <Console name="console_appender" target="SYSTEM_OUT"/>
 
     </Appenders>
 
