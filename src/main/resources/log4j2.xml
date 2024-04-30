@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Properties>
+        <property name="logLevel" value="${env:LOG_LEVEL:-INFO}"/>
+    </Properties>
+
+    <Appenders>
+        <!--Console Appender-->
+        <Console name="console_appender" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:log4j2-layout-template.json"/>
+        </Console>
+
+    </Appenders>
+
+    <Loggers>
+        <root level="${logLevel}">
+            <appender-ref ref="console_appender"/>
+        </root>
+    </Loggers>
+</Configuration>
