@@ -1,8 +1,6 @@
 FROM gradle:8-jdk21-alpine AS builder
 WORKDIR /app
-COPY build.gradle gradle.properties settings.gradle ./
-COPY gradle/libs.versions.toml gradle/
-COPY .git .git
+COPY build.gradle settings.gradle ./
 COPY src/ src/
 RUN gradle --no-daemon build --stacktrace
 
