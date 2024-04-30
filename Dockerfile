@@ -6,7 +6,6 @@ RUN gradle --no-daemon build --stacktrace
 
 FROM openjdk:21
 WORKDIR /app
-RUN apk --no-cache add curl
 COPY --from=builder /app/build/libs/kafka-searcher-*.jar /kafka-searcher.jar
 ENV PORT 8080
 EXPOSE 8080
