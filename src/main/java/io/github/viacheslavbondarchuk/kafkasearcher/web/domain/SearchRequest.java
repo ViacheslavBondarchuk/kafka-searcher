@@ -1,11 +1,19 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.web.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.ValidationMessages.LIMIT_VALIDATION_MESSAGE;
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.ValidationMessages.SEARCH_TYPE_VALIDATION_MESSAGE;
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.ValidationMessages.SKIP_VALIDATION_MESSAGE;
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.ValidationMessages.TOPIC_VALIDATION_MESSAGE;
 import static io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchType.ACTUAL;
 
 /**
@@ -14,13 +22,13 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchType
  * time: 9:37 PM
  **/
 
-public record SearchRequest(String topic,
+public record SearchRequest(@NotBlank(message = TOPIC_VALIDATION_MESSAGE) String topic,
                             Map<String, Object> query,
                             Map<String, Integer> sort,
                             Map<String, Integer> fields,
-                            SearchType searchType,
-                            int skip,
-                            int limit) {
+                            @NotNull(message = SEARCH_TYPE_VALIDATION_MESSAGE) SearchType searchType,
+                            @PositiveOrZero(message = SKIP_VALIDATION_MESSAGE) int skip,
+                            @Positive(message = LIMIT_VALIDATION_MESSAGE) int limit) {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public SearchRequest(String topic,

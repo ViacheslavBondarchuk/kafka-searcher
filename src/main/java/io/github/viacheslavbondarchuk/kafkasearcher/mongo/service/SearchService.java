@@ -32,7 +32,7 @@ public class SearchService {
 
     private void checkReadiness(String topic) {
         if (!kafkaConsumerRegistry.isReady(topic)) {
-            throw new RuntimeException("No readiness available for topic: " + topic + ", topic still reading");
+            throw new RuntimeException("No readiness available for topic: " + topic + ", topic still in process");
         }
     }
 

@@ -3,13 +3,18 @@ package io.github.viacheslavbondarchuk.kafkasearcher.web.controller;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.service.KafkaConsumerManagementService;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.registry.KafkaTopicRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.service.KafkaTopicManagementService;
+import io.github.viacheslavbondarchuk.kafkasearcher.web.service.AuthorizationService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Set;
+
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.Headers.SECRET_KEY;
 
 /**
  * author: vbondarchuk
@@ -23,29 +28,36 @@ public class KafkaTopicController implements Endpoint {
     private final KafkaConsumerManagementService kafkaConsumerManagementService;
     private final KafkaTopicManagementService kafkaTopicManagementService;
     private final KafkaTopicRegistry topicRegistry;
+    private final AuthorizationService authorizationService;
 
     public KafkaTopicController(KafkaConsumerManagementService kafkaConsumerManagementService,
                                 KafkaTopicManagementService kafkaTopicManagementService,
-                                KafkaTopicRegistry topicRegistry) {
+                                KafkaTopicRegistry topicRegistry, AuthorizationService authorizationService) {
         this.kafkaConsumerManagementService = kafkaConsumerManagementService;
         this.kafkaTopicManagementService = kafkaTopicManagementService;
         this.topicRegistry = topicRegistry;
+        this.authorizationService = authorizationService;
     }
 
     @GetMapping
-    public Set<String> topics() {
+    public Set<String> topics(@RequestHeader(SECRET_KEY) char[] secretKey) {
+        authorizationService.check(secretKey);
         return topicRegistry.topics();
     }
 
     @PostMapping("/register")
-    public void register(@RequestParam("topic") String topic) {
+    public ResponseEntity<?> register(@RequestParam("topic") String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
+        authorizationService.check(secretKey);
         kafkaTopicManagementService.register(topic);
         kafkaConsumerManagementService.register(topic);
+        return emptyOkResponse();
     }
 
     @PostMapping("/unregister")
-    public void unregister(@RequestParam("topic") String topic) {
+    public ResponseEntity<?> unregister(@RequestParam("topic") String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
+        authorizationService.check(secretKey);
         kafkaTopicManagementService.unregister(topic);
         kafkaConsumerManagementService.unregister(topic);
+        return emptyOkResponse();
     }
 }

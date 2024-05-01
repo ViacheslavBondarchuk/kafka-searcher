@@ -3,6 +3,7 @@ package io.github.viacheslavbondarchuk.kafkasearcher.async.handler.impl;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * author: vbondarchuk
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
  **/
 
 
+@Component
 public class LoggableErrorHandler implements ErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(LoggableErrorHandler.class);
 

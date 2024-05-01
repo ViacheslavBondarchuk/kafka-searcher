@@ -6,6 +6,6 @@ package io.github.viacheslavbondarchuk.kafkasearcher.web.domain;
  * time: 10:11 PM
  **/
 
-public record ErrorResponse(String message) {
+public record ErrorResponse<T>(T message) {
 
 }

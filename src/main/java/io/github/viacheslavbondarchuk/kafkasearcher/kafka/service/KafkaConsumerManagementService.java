@@ -1,7 +1,6 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.kafka.service;
 
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
-import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.impl.LoggableErrorHandler;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.scheduler.Scheduler;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ObservableKafkaConsumer;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.RecordsBatch;
@@ -57,7 +56,8 @@ public class KafkaConsumerManagementService {
                                           KafkaProperties kafkaProperties,
                                           KafkaTopicRegistry topicRegistry,
                                           DocumentStorage documentStorage,
-                                          MongoCollectionManagementService collectionManagementService) {
+                                          MongoCollectionManagementService collectionManagementService,
+                                          ErrorHandler errorHandler) {
         this.scheduler = scheduler;
         this.registry = registry;
         this.factory = factory;
@@ -66,8 +66,8 @@ public class KafkaConsumerManagementService {
         this.topicRegistry = topicRegistry;
         this.documentStorage = documentStorage;
         this.collectionManagementService = collectionManagementService;
+        this.errorHandler = errorHandler;
         this.subscribersMap = new ConcurrentHashMap<>();
-        this.errorHandler = new LoggableErrorHandler();
     }
 
     @PostConstruct
