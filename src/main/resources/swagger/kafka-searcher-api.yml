@@ -1,11 +1,10 @@
 openapi: 3.0.0
 info:
-  title: Sample API
-  description: Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.
-  version: 0.1.9
+  title: Kafka searcher API
+  version: 0.1.1
 servers:
-  - url: https://io-operations.xyz/offer-searcher
-    description: Offer-searcher
+  - url: https://io-operations.xyz/kafka-searcher
+    description: Kafka searcher
 paths:
   /status:
     get:

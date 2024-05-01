@@ -19,4 +19,8 @@ public interface CommonConstants {
     interface Headers {
         String SECRET_KEY = "Secret-Key";
     }
+
+    interface RequestParams {
+        String TOPIC = "topic";
+    }
 }

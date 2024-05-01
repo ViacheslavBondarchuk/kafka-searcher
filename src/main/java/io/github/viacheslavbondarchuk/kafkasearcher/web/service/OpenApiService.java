@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class OpenApiService {
-    private static final String OPENDOC_FILE_PATH = "swagger/offer-searcher-api.yml";
+    private static final String OPENDOC_FILE_PATH = "swagger/kafka-searcher-api.yml";
 
     private final ErrorHandler errorHandler;
     private final YAMLFactory yamlFactory;

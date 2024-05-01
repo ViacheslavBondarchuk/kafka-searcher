@@ -2,7 +2,7 @@ window.onload = function () {
     let themeSwitcher = new ThemeSwitcher(".wrapper .topbar-wrapper");
 
     window.ui = SwaggerUIBundle({
-        url: '/swagger/openapi',
+        url: 'kafka-searcher/swagger/openapi',
         dom_id: '#swagger-ui',
         docExpansion: 'none',
         syntaxHighlight: {

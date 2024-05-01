@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Set;
 
 import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.Headers.SECRET_KEY;
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.RequestParams.TOPIC;
 
 /**
  * author: vbondarchuk
@@ -46,7 +47,7 @@ public class KafkaTopicController implements Endpoint {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestParam("topic") String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
+    public ResponseEntity<?> register(@RequestParam(TOPIC) String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
         kafkaTopicManagementService.register(topic);
         kafkaConsumerManagementService.register(topic);
@@ -54,7 +55,7 @@ public class KafkaTopicController implements Endpoint {
     }
 
     @PostMapping("/unregister")
-    public ResponseEntity<?> unregister(@RequestParam("topic") String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
+    public ResponseEntity<?> unregister(@RequestParam(TOPIC) String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
         kafkaTopicManagementService.unregister(topic);
         kafkaConsumerManagementService.unregister(topic);
