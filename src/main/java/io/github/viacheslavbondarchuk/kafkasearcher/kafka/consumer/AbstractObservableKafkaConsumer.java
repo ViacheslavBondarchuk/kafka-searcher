@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * author: vbondarchuk
@@ -38,10 +36,8 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     protected final Duration pollTimeout;
     protected final String topic;
     protected final ErrorHandler errorHandler;
-    protected final AtomicBoolean isReady = new AtomicBoolean();
-    protected final AtomicLong remaining = new AtomicLong(-1);
-    protected final Map<TopicPartition, Long> topicMaxOffsetPair;
-    protected final Map<TopicPartition, Long> topicCurrentOffsetPair;
+    protected final Map<TopicPartition, Long> topicMaxOffsetMap;
+    protected final Map<TopicPartition, Long> topicCurrentOffsetMap;
 
     public AbstractObservableKafkaConsumer(String topic, Map<String, Object> config, Duration pollTimeout, ErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
@@ -49,8 +45,8 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
         this.consumer = new KafkaConsumer<>(config);
         this.pollTimeout = pollTimeout;
         this.topic = topic;
-        this.topicMaxOffsetPair = new HashMap<>();
-        this.topicCurrentOffsetPair = new HashMap<>();
+        this.topicMaxOffsetMap = new HashMap<>();
+        this.topicCurrentOffsetMap = new HashMap<>();
         this.init();
     }
 
@@ -60,7 +56,7 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
                         .stream()
                         .map(partitionInfo -> new TopicPartition(partitionInfo.topic(), partitionInfo.partition()))
                         .toList())
-                .forEach((partition, offset) -> topicMaxOffsetPair.put(partition, offset - 1));
+                .forEach((partition, offset) -> topicMaxOffsetMap.put(partition, offset - 1L));
     }
 
     protected void notifySubscribers(T value) throws InterruptedException {
@@ -70,19 +66,7 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     }
 
     private void updateCurrentOffset(ConsumerRecords<K, V> records) {
-        records.forEach(record -> topicCurrentOffsetPair.put(new TopicPartition(topic, record.partition()), record.offset()));
-    }
-
-    private void updateRemaining() {
-        if (remaining.get() != 0) {
-            remaining.set(Long.max(0, getRemaining()));
-        }
-    }
-
-    private void updateReady() {
-        if (!isReady.get()) {
-            isReady.set(remaining.get() == 0);
-        }
+        records.forEach(record -> topicCurrentOffsetMap.put(new TopicPartition(topic, record.partition()), record.offset()));
     }
 
     private void logRecordsCount(long count) {
@@ -92,11 +76,11 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     private long getRemaining() {
         long maxOffset = 0L;
         long currentOffset = 0L;
-        for (Map.Entry<TopicPartition, Long> entry : topicMaxOffsetPair.entrySet()) {
-            currentOffset += Optional.ofNullable(topicCurrentOffsetPair.get(entry.getKey())).orElse(0L);
+        for (Map.Entry<TopicPartition, Long> entry : topicMaxOffsetMap.entrySet()) {
+            currentOffset += Optional.ofNullable(topicCurrentOffsetMap.get(entry.getKey())).orElse(0L);
             maxOffset += entry.getValue();
         }
-        return maxOffset - currentOffset;
+        return Long.max(maxOffset - currentOffset, 0L);
     }
 
     protected abstract T transform(ConsumerRecords<K, V> records);
@@ -106,8 +90,6 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
         try {
             ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
             updateCurrentOffset(records);
-            updateRemaining();
-            updateReady();
             int count = records.count();
             if (count > 0) {
                 logRecordsCount(count);
@@ -117,6 +99,10 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
         } catch (InterruptedException exception) {
             ThreadUtils.interrupt();
         }
+    }
+
+    private boolean checkReady(Long offset) {
+        return offset < 100L;
     }
 
     @Override
@@ -135,12 +121,14 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
 
     @Override
     public KafkaConsumerStatus getStatus() {
-        return new KafkaConsumerStatus(topic, isReady.get(), remaining.get());
+        long remaining = getRemaining();
+        boolean ready = checkReady(remaining);
+        return new KafkaConsumerStatus(topic, ready, ready ? 0L : remaining);
     }
 
     @Override
     public boolean isReady() {
-        return isReady.get();
+        return checkReady(getRemaining());
     }
 
     @Override
