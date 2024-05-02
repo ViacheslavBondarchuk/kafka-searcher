@@ -31,12 +31,12 @@ ext {
     set('slf4jVersion', "2.0.9")
     set('hibernateValidatorVersion', "8.0.1.Final")
     set('clonerVersion', "1.9.12")
-    set('swaggerVersion', "2.2.21")
 }
 
 dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-vault-config'
@@ -44,14 +44,14 @@ dependencies {
 
     implementation "org.hibernate.validator:hibernate-validator:${hibernateValidatorVersion}"
 
-    implementation "io.swagger.core.v3:swagger-core:${swaggerVersion}"
-
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-layout-template-json:${log4jVersion}"
 
     implementation "uk.com.robust-it:cloning:${clonerVersion}"
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }
 
 dependencyManagement {
