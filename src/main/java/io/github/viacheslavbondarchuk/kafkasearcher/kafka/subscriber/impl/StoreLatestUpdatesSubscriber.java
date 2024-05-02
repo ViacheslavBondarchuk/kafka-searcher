@@ -50,7 +50,7 @@ public final class StoreLatestUpdatesSubscriber implements KafkaConsumerSubscrib
 
     @Override
     public void onNotify(RecordsBatch<String, String> value, Acknowledgement ack) {
-        Collection<ConsumerRecord<String, String>> compacted = CollectionUtils.compact(value, ConsumerRecord::value, this::keepLatest);
+        Collection<ConsumerRecord<String, String>> compacted = CollectionUtils.compact(value, ConsumerRecord::key, this::keepLatest);
         Map<Boolean, List<ConsumerRecord<String, String>>> partitioned = compacted.stream()
                 .collect(Collectors.partitioningBy(record -> record.value() != null));
 
