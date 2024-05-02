@@ -9,12 +9,15 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * author: vbondarchuk
@@ -30,9 +33,11 @@ public class DocumentStorage {
     private static final Query REMOVE_ALL_QUERY = Query.query(Criteria.where(MONGO_ID_KEY));
 
     private final MongoTemplate mongoTemplate;
+    private final TransactionTemplate transactionTemplate;
 
-    public DocumentStorage(MongoTemplate mongoTemplate) {
+    public DocumentStorage(MongoTemplate mongoTemplate, TransactionTemplate transactionTemplate) {
         this.mongoTemplate = mongoTemplate;
+        this.transactionTemplate = transactionTemplate;
     }
 
     private Update createUpsertUpdate(Document document) {
@@ -41,6 +46,13 @@ public class DocumentStorage {
             update.set(entry.getKey(), entry.getValue());
         }
         return update;
+    }
+
+    public void executeInTransaction(Consumer<TransactionStatus> consumer) {
+        transactionTemplate.execute(status -> {
+            consumer.accept(status);
+            return null;
+        });
     }
 
     public void save(String topic, Document document) {

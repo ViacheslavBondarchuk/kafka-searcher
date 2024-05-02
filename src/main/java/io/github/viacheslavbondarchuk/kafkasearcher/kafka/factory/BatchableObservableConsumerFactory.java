@@ -26,7 +26,6 @@ public final class BatchableObservableConsumerFactory {
         this.jksFileService = jksFileService;
     }
 
-
     public <K, V> ObservableKafkaConsumer<RecordsBatch<K, V>> newConsumer(String topic, Duration pollTimeout, ErrorHandler errorHandler) {
         return new BatchedObservableKafkaConsumer<>(topic, kafkaProperties.load(jksFileService, topic), pollTimeout, errorHandler);
     }

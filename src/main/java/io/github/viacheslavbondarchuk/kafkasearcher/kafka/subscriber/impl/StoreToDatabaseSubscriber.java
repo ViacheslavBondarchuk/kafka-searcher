@@ -15,54 +15,69 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.UPDATES_PREFIX;
+
 /**
  * author: vbondarchuk
  * date: 4/30/2024
  * time: 11:10 AM
  **/
 
-public final class StoreLatestUpdatesSubscriber implements KafkaConsumerSubscriber<RecordsBatch<String, String>> {
+public final class StoreToDatabaseSubscriber implements KafkaConsumerSubscriber<RecordsBatch<String, String>> {
     private final MongoCollectionManagementService collectionManagementService;
     private final DocumentStorage documentStorage;
-    private final String topic;
+    private final String collectionName;
+    private final String updateCollectionName;
 
-    public StoreLatestUpdatesSubscriber(MongoCollectionManagementService collectionManagementService,
-                                        DocumentStorage documentStorage,
-                                        String topic) {
+    public StoreToDatabaseSubscriber(MongoCollectionManagementService collectionManagementService,
+                                     DocumentStorage documentStorage,
+                                     String collectionName) {
         this.collectionManagementService = collectionManagementService;
         this.documentStorage = documentStorage;
-        this.topic = topic;
+        this.collectionName = collectionName;
+        this.updateCollectionName = collectionName.concat(UPDATES_PREFIX);
     }
 
     @Override
     public void onSubscribe() {
-        collectionManagementService.dropCollection(topic);
+        collectionManagementService.dropCollection(collectionName);
+        collectionManagementService.dropCollection(updateCollectionName);
     }
 
     @Override
     public void onUnsubscribe() {
-        collectionManagementService.dropCollection(topic);
+        collectionManagementService.dropCollection(collectionName);
+        collectionManagementService.dropCollection(updateCollectionName);
     }
 
     private ConsumerRecord<String, String> keepLatest(ConsumerRecord<String, String> r1, ConsumerRecord<String, String> r2) {
         return r1.offset() > r2.offset() ? r1 : r2;
     }
 
-    @Override
-    public void onNotify(RecordsBatch<String, String> value, Acknowledgement ack) {
+    private void storeLatest(RecordsBatch<String, String> value) {
         Collection<ConsumerRecord<String, String>> compacted = CollectionUtils.compact(value, ConsumerRecord::key, this::keepLatest);
         Map<Boolean, List<ConsumerRecord<String, String>>> partitioned = compacted.stream()
                 .collect(Collectors.partitioningBy(record -> record.value() != null));
 
         List<ConsumerRecord<String, String>> documentsToSave = partitioned.get(true);
         if (documentsToSave != null && !documentsToSave.isEmpty()) {
-            documentStorage.upsertAll(topic, DocumentUtils.fromRecordsWithoutEntityId(ConsumerRecord::key, documentsToSave));
+            documentStorage.upsertAll(collectionName, DocumentUtils.fromRecordsWithoutEntityId(ConsumerRecord::key, documentsToSave));
         }
 
         List<ConsumerRecord<String, String>> documentsToRemove = partitioned.get(false);
         if (documentsToRemove != null && !documentsToRemove.isEmpty()) {
-            documentStorage.removeAll(topic, KafkaUtils.ids(documentsToRemove));
+            documentStorage.removeAll(collectionName, KafkaUtils.ids(documentsToRemove));
         }
+    }
+
+    private void storeUpdates(RecordsBatch<String, String> value) {
+        documentStorage.saveAll(updateCollectionName, DocumentUtils.fromRecords(KafkaUtils::uniqueId, value));
+    }
+
+    @Override
+    public void onNotify(RecordsBatch<String, String> value, Acknowledgement ack) {
+//        storeUpdates(value);
+//        storeLatest(value);
         ack.acknowledge();
     }
 

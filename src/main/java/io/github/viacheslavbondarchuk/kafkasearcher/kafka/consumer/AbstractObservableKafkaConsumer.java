@@ -2,7 +2,7 @@ package io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer;
 
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.acknowledgement.Acknowledgement;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.acknowledgement.BlockingAcknowledgement;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.acknowledgement.LockFreeAcknowledgement;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.KafkaConsumerStatus;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.KafkaConsumerSubscriber;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.ThreadUtils;
@@ -16,8 +16,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractObservableKafkaConsumer<K, V, T> implements ObservableKafkaConsumer<T> {
     protected final static Logger logger = LoggerFactory.getLogger(AbstractObservableKafkaConsumer.class);
 
-    protected final List<KafkaConsumerSubscriber<T>> subscribers;
     protected final KafkaConsumer<K, V> consumer;
     protected final Duration pollTimeout;
     protected final String topic;
@@ -39,9 +36,10 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     protected final Map<TopicPartition, Long> topicMaxOffsetMap;
     protected final Map<TopicPartition, Long> topicCurrentOffsetMap;
 
+    protected KafkaConsumerSubscriber<T> subscriber;
+
     public AbstractObservableKafkaConsumer(String topic, Map<String, Object> config, Duration pollTimeout, ErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
-        this.subscribers = new LinkedList<>();
         this.consumer = new KafkaConsumer<>(config);
         this.pollTimeout = pollTimeout;
         this.topic = topic;
@@ -60,8 +58,8 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     }
 
     protected void notifySubscribers(T value) throws InterruptedException {
-        Acknowledgement acknowledgement = new BlockingAcknowledgement(subscribers.size(), consumer::commitSync);
-        subscribers.forEach(subscriber -> subscriber.onNotify(value, acknowledgement));
+        Acknowledgement acknowledgement = new LockFreeAcknowledgement(consumer::commitSync, 1);
+        subscriber.onNotify(value, acknowledgement);
         acknowledgement.await(15, TimeUnit.SECONDS);
     }
 
@@ -107,15 +105,18 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
 
     @Override
     public void subscribe(KafkaConsumerSubscriber<T> subscriber) {
-        if (!subscribers.contains(subscriber)) {
-            subscribers.add(subscriber);
-            subscriber.onSubscribe();
+        if (this.subscriber == null) {
+            synchronized (this) {
+                if (this.subscriber == null) {
+                    this.subscriber = subscriber;
+                    this.subscriber.onSubscribe();
+                }
+            }
         }
     }
 
     @Override
     public void unsubscribe(KafkaConsumerSubscriber<T> subscriber) {
-        subscribers.remove(subscriber);
         subscriber.onUnsubscribe();
     }
 

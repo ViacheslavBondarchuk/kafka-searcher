@@ -9,8 +9,7 @@ import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaProper
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaSchedulerProperties;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.KafkaConsumerSubscriber;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.impl.StoreFullUpdatesSubscriber;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.impl.StoreLatestUpdatesSubscriber;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.impl.StoreToDatabaseSubscriber;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.management.MongoCollectionManagementService;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.registry.KafkaTopicRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.storage.DocumentStorage;
@@ -22,10 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,7 +42,7 @@ public class KafkaConsumerManagementService {
     private final KafkaProperties kafkaProperties;
     private final KafkaTopicRegistry topicRegistry;
     private final DocumentStorage documentStorage;
-    private final Map<String, List<KafkaConsumerSubscriber>> subscribersMap;
+    private final Map<String, KafkaConsumerSubscriber> subscriberMap;
     private final MongoCollectionManagementService collectionManagementService;
     private final ErrorHandler errorHandler;
 
@@ -67,7 +64,7 @@ public class KafkaConsumerManagementService {
         this.documentStorage = documentStorage;
         this.collectionManagementService = collectionManagementService;
         this.errorHandler = errorHandler;
-        this.subscribersMap = new ConcurrentHashMap<>();
+        this.subscriberMap = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
@@ -76,26 +73,17 @@ public class KafkaConsumerManagementService {
                 .forEach(this::register);
     }
 
-    private List<KafkaConsumerSubscriber<RecordsBatch<String, String>>> createSubscribers(String topic) {
-        return List.of(
-                new StoreLatestUpdatesSubscriber(collectionManagementService, documentStorage, topic),
-                new StoreFullUpdatesSubscriber(collectionManagementService, documentStorage, topic)
-        );
-    }
-
     private void addSubscriberToMap(String topic, KafkaConsumerSubscriber subscriber) {
-        subscribersMap.computeIfAbsent(topic, ignored -> new CopyOnWriteArrayList<>())
-                .add(subscriber);
+        subscriberMap.computeIfAbsent(topic, ignored -> subscriber);
     }
 
     public void register(String topic) {
         log.info("Registering topic: {}", topic);
         try {
             ObservableKafkaConsumer<RecordsBatch<String, String>> consumer = factory.newConsumer(topic, kafkaProperties.pollTimeout(), errorHandler);
-            for (KafkaConsumerSubscriber subscriber : createSubscribers(topic)) {
-                consumer.subscribe(subscriber);
-                addSubscriberToMap(topic, subscriber);
-            }
+            StoreToDatabaseSubscriber subscriber = new StoreToDatabaseSubscriber(collectionManagementService, documentStorage, topic);
+            consumer.subscribe(subscriber);
+            addSubscriberToMap(topic, subscriber);
             registry.register(topic, consumer);
             scheduler.scheduleAtFixedRate(topic, consumer::poll, 0L, kafkaSchedulerProperties.period(), TimeUnit.MILLISECONDS, errorHandler);
         } catch (Exception ex) {
@@ -109,12 +97,9 @@ public class KafkaConsumerManagementService {
         log.info("Unregistering topic: {}", topic);
         try {
             ObservableKafkaConsumer consumer = registry.unregister(topic);
-            List<KafkaConsumerSubscriber> subscribers = subscribersMap.remove(topic);
             if (consumer != null) {
                 scheduler.cancel(topic, false);
-                if (subscribers != null) {
-                    subscribers.forEach(consumer::unsubscribe);
-                }
+                consumer.unsubscribe(subscriberMap.remove(topic));
                 ThreadUtils.sleep(Duration.of(1, ChronoUnit.SECONDS));
                 consumer.close();
             }

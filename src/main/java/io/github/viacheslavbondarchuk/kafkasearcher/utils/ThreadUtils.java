@@ -30,4 +30,8 @@ public final class ThreadUtils {
     public static long getId() {
         return Thread.currentThread().threadId();
     }
+
+    public static boolean isInterrupted() {
+        return Thread.currentThread().isInterrupted();
+    }
 }
