@@ -5,14 +5,17 @@ import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.RecordsBatch;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.KafkaConsumerSubscriber;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.management.MongoCollectionManagementService;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.storage.DocumentStorage;
+import io.github.viacheslavbondarchuk.kafkasearcher.utils.AsyncUtils;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.CollectionUtils;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.DocumentUtils;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.KafkaUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.UPDATES_PREFIX;
@@ -24,18 +27,23 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConst
  **/
 
 public final class StoreToDatabaseSubscriber implements KafkaConsumerSubscriber<RecordsBatch<String, String>> {
+    private static final Duration DURATION = Duration.ofMillis(5);
+
     private final MongoCollectionManagementService collectionManagementService;
     private final DocumentStorage documentStorage;
     private final String collectionName;
     private final String updateCollectionName;
+    private final ExecutorService executorService;
 
     public StoreToDatabaseSubscriber(MongoCollectionManagementService collectionManagementService,
                                      DocumentStorage documentStorage,
-                                     String collectionName) {
+                                     String collectionName,
+                                     ExecutorService executorService) {
         this.collectionManagementService = collectionManagementService;
         this.documentStorage = documentStorage;
         this.collectionName = collectionName;
         this.updateCollectionName = collectionName.concat(UPDATES_PREFIX);
+        this.executorService = executorService;
     }
 
     @Override
@@ -71,13 +79,14 @@ public final class StoreToDatabaseSubscriber implements KafkaConsumerSubscriber<
     }
 
     private void storeUpdates(RecordsBatch<String, String> value) {
-        documentStorage.saveAll(updateCollectionName, DocumentUtils.fromRecords(KafkaUtils::uniqueId, value));
+        documentStorage.upsertAll(updateCollectionName, DocumentUtils.fromRecords(KafkaUtils::uniqueId, value));
     }
 
     @Override
     public void onNotify(RecordsBatch<String, String> value, Acknowledgement ack) {
-//        storeUpdates(value);
-//        storeLatest(value);
+        AsyncUtils.awaitAllOf(DURATION,
+                executorService.submit(() -> storeUpdates(value)),
+                executorService.submit(() -> storeLatest(value)));
         ack.acknowledge();
     }
 

@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Set;
+import java.util.Comparator;
+import java.util.List;
 
 import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.Headers.SECRET_KEY;
 import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.RequestParams.TOPIC;
@@ -41,9 +42,12 @@ public class KafkaTopicController implements Endpoint {
     }
 
     @GetMapping
-    public Set<String> topics(@RequestHeader(SECRET_KEY) char[] secretKey) {
+    public List<String> topics(@RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
-        return topicRegistry.topics();
+        return topicRegistry.topics()
+                .stream()
+                .sorted(Comparator.naturalOrder())
+                .toList();
     }
 
     @PostMapping("/register")

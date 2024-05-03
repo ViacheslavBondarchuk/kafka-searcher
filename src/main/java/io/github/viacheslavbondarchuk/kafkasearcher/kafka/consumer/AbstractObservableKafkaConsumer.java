@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static org.apache.kafka.clients.consumer.ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG;
+
 /**
  * author: vbondarchuk
  * date: 4/28/2024
@@ -38,10 +40,10 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
 
     protected KafkaConsumerSubscriber<T> subscriber;
 
-    public AbstractObservableKafkaConsumer(String topic, Map<String, Object> config, Duration pollTimeout, ErrorHandler errorHandler) {
+    public AbstractObservableKafkaConsumer(String topic, Map<String, Object> config, ErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
         this.consumer = new KafkaConsumer<>(config);
-        this.pollTimeout = pollTimeout;
+        this.pollTimeout = Duration.ofMillis((Integer) config.getOrDefault(REQUEST_TIMEOUT_MS_CONFIG, 100L));
         this.topic = topic;
         this.topicMaxOffsetMap = new HashMap<>();
         this.topicCurrentOffsetMap = new HashMap<>();

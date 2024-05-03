@@ -17,14 +17,9 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class AutoConfiguration {
-    private final KafkaSchedulerProperties properties;
-
-    public AutoConfiguration(KafkaSchedulerProperties properties) {
-        this.properties = properties;
-    }
 
     @Bean
-    public Scheduler kafkaConsumerManagementScheduler() {
+    public Scheduler kafkaConsumerManagementScheduler(KafkaSchedulerProperties properties) {
         SchedulerConfig config = new SchedulerConfig("kafka-consumer-management",
                 properties.parallelism(), new BlockingPolicy(15, TimeUnit.MINUTES), false);
         return Scheduler.newScheduler(config);

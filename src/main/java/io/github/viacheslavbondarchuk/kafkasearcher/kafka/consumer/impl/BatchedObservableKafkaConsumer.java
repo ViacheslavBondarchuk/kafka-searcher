@@ -5,7 +5,6 @@ import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.AbstractObser
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.RecordsBatch;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 
-import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -15,8 +14,8 @@ import java.util.Map;
  **/
 
 public final class BatchedObservableKafkaConsumer<K, V> extends AbstractObservableKafkaConsumer<K, V, RecordsBatch<K, V>> {
-    public BatchedObservableKafkaConsumer(String topic, Map<String, Object> config, Duration pollTimeout, ErrorHandler errorHandler) {
-        super(topic, config, pollTimeout, errorHandler);
+    public BatchedObservableKafkaConsumer(String topic, Map<String, Object> config, ErrorHandler errorHandler) {
+        super(topic, config, errorHandler);
     }
 
     @Override
