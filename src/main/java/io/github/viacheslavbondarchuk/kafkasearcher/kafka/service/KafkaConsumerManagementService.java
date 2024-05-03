@@ -68,7 +68,7 @@ public class KafkaConsumerManagementService {
         this.factory = factory;
         this.kafkaSchedulerProperties = kafkaSchedulerProperties;
         this.executorService = new ThreadPoolExecutor(subscriberProperties.parallelism(), subscriberProperties.parallelism(),
-                30, SECONDS, new LinkedBlockingQueue<>(), new BlockingPolicy(15, MINUTES));
+                30, SECONDS, new LinkedBlockingQueue<>(subscriberProperties.parallelism()), new BlockingPolicy(15, MINUTES));
         this.topicRegistry = topicRegistry;
         this.documentStorage = documentStorage;
         this.collectionManagementService = collectionManagementService;
