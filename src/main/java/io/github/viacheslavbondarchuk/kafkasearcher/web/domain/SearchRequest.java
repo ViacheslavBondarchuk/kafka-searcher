@@ -1,6 +1,7 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.web.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -28,7 +29,7 @@ public record SearchRequest(@NotBlank(message = TOPIC_VALIDATION_MESSAGE) String
                             Map<String, Integer> fields,
                             @NotNull(message = SEARCH_TYPE_VALIDATION_MESSAGE) SearchType searchType,
                             @PositiveOrZero(message = SKIP_VALIDATION_MESSAGE) int skip,
-                            @Positive(message = LIMIT_VALIDATION_MESSAGE) int limit) {
+                            @Positive(message = LIMIT_VALIDATION_MESSAGE) @Max(100) int limit) {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public SearchRequest(String topic,
