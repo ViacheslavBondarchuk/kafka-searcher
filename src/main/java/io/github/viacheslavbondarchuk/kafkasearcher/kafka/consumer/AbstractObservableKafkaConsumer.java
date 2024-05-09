@@ -102,7 +102,7 @@ public abstract class AbstractObservableKafkaConsumer<K, V, T> implements Observ
     }
 
     private boolean checkReady(Long offset) {
-        return offset < 100L;
+        return offset < 1000L;
     }
 
     @Override
