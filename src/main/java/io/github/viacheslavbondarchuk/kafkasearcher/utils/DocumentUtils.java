@@ -27,8 +27,12 @@ public final class DocumentUtils {
     public static final String TIMESTAMP_TYPE_KEY = "timestampType";
     public static final String DATE_KEY = "date";
     public static final String PARTITION_KEY = "partition";
+    public static final String OPERATION_KEY = "operation";
     public static final String SYSTEM_KEY = "system";
     public static final String OFFSET_KEY = "offset";
+
+    public static final String OPERATION_REMOVE = "REMOVE";
+    public static final String OPERATION_UPDATE = "UPDATE";
 
     private DocumentUtils() {}
 
@@ -63,7 +67,8 @@ public final class DocumentUtils {
                 TIMESTAMP_TYPE_KEY, record.timestampType(),
                 DATE_KEY, DateTimeUtils.format(record.timestamp(), ISO_DATE_TIME),
                 OFFSET_KEY, record.offset(),
-                PARTITION_KEY, record.partition()
+                PARTITION_KEY, record.partition(),
+                OPERATION_KEY, record.value() == null ? OPERATION_REMOVE : OPERATION_UPDATE
         ));
         if (id != null) {
             document.append(MONGO_ID_KEY, id);
@@ -75,6 +80,12 @@ public final class DocumentUtils {
                                              Iterable<ConsumerRecord<String, String>> records) {
         return StreamSupport.stream(records.spliterator(), false)
                 .map(record -> DocumentUtils.fromRecord(idExtractor.apply(record), record))
+                .toList();
+    }
+
+    public static List<Document> fromRecords(Iterable<ConsumerRecord<String, String>> records) {
+        return StreamSupport.stream(records.spliterator(), false)
+                .map(record -> DocumentUtils.fromRecord(null, record))
                 .toList();
     }
 

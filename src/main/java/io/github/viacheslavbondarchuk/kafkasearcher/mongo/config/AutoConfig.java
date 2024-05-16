@@ -39,6 +39,8 @@ public class AutoConfig extends AbstractMongoClientConfiguration {
                 .retryReads(true)
                 .retryWrites(true)
                 .credential(MongoCredential.createCredential(properties.username(), properties.database(), properties.password()))
+                .applyToConnectionPoolSettings(builder -> builder.maxSize(properties.connectionPoolSize())
+                        .maxConnecting(properties.connectionPoolSize()))
                 .applicationName("offer-searcher")
                 .applyToClusterSettings(builder -> builder.hosts(List.of(new ServerAddress(properties.host()))))
                 .build());

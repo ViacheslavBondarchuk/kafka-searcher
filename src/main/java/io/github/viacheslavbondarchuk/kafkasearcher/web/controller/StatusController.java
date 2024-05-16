@@ -1,8 +1,8 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.web.controller;
 
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ObservableKafkaConsumer;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.KafkaConsumerStatus;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain.TopicStatus;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.service.KafkaTopicStatusService;
+import io.github.viacheslavbondarchuk.kafkasearcher.mongo.registry.KafkaTopicRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.web.service.AuthorizationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -23,22 +23,24 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConst
 @RestController
 @RequestMapping("status")
 public class StatusController implements Endpoint {
-    private static final Comparator<KafkaConsumerStatus> comparator = Comparator.comparing(KafkaConsumerStatus::topic);
+    private static final Comparator<TopicStatus> comparator = Comparator.comparing(TopicStatus::topic);
 
     private final AuthorizationService authorizationService;
-    private final KafkaConsumerRegistry registry;
+    private final KafkaTopicStatusService statusService;
+    private final KafkaTopicRegistry topicRegistry;
 
-    public StatusController(AuthorizationService authorizationService, KafkaConsumerRegistry registry) {
+    public StatusController(AuthorizationService authorizationService, KafkaTopicStatusService statusService, KafkaTopicRegistry topicRegistry) {
         this.authorizationService = authorizationService;
-        this.registry = registry;
+        this.statusService = statusService;
+        this.topicRegistry = topicRegistry;
     }
 
     @GetMapping
-    public Collection<KafkaConsumerStatus> status(@RequestHeader(SECRET_KEY) char[] secretKey) {
+    public Collection<TopicStatus> status(@RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
-        return registry.consumers()
+        return topicRegistry.topics()
                 .stream()
-                .map(ObservableKafkaConsumer::getStatus)
+                .map(statusService::getTopicStatus)
                 .sorted(comparator)
                 .toList();
     }

@@ -2,7 +2,6 @@ package io.github.viacheslavbondarchuk.kafkasearcher;
 
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaProperties;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaSchedulerProperties;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaSubscriberProperties;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.properties.MongoProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,7 +11,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties({
         KafkaProperties.class,
         KafkaSchedulerProperties.class,
-        KafkaSubscriberProperties.class,
         MongoProperties.class
 })
 public class Main {

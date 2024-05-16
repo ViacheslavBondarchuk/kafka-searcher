@@ -1,9 +1,11 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.utils;
 
+import org.eclipse.collections.api.block.HashingStrategy;
+import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
+
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
+import java.util.Queue;
+import java.util.function.Supplier;
 
 /**
  * author: vbondarchuk
@@ -14,11 +16,23 @@ import java.util.function.Function;
 public final class CollectionUtils {
     private CollectionUtils() {}
 
-    public static <K, V> Collection<V> compact(Iterable<V> iterable, Function<V, K> keyExtractor, BinaryOperator<V> merger) {
-        LinkedHashMap<K, V> map = new LinkedHashMap<>();
-        for (V value : iterable) {
-            map.merge(keyExtractor.apply(value), value, merger);
-        }
-        return map.values();
+    public static <E> UnifiedSetWithHashingStrategy<E> compact(Iterable<E> iterable, HashingStrategy<E> strategy) {
+        UnifiedSetWithHashingStrategy<E> compacted = new UnifiedSetWithHashingStrategy<>(strategy);
+        iterable.forEach(compacted::addOrReplace);
+        return compacted;
     }
+
+    public static <V> Collection<V> drainTo(Queue<V> source, Collection<V> target, int limit) {
+        V value;
+        while (limit > 0 && (value = source.poll()) != null) {
+            target.add(value);
+            limit--;
+        }
+        return target;
+    }
+
+    public static <V> Collection<V> drainTo(Queue<V> source, Supplier<Collection<V>> factory, int limit) {
+        return drainTo(source, factory.get(), limit);
+    }
+
 }

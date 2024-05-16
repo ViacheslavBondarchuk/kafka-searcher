@@ -9,6 +9,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  **/
 
 @ConfigurationProperties("io.offer-searcher.transport.kafka.scheduler")
-public record KafkaSchedulerProperties(int parallelism, long period) {
+public record KafkaSchedulerProperties(long period) {
 
 }

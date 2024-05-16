@@ -1,11 +1,10 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry;
 
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ObservableKafkaConsumer;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.QueuedKafkaConsumer;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,22 +16,24 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @SuppressWarnings({"rawtypes, unchecked"})
-public class KafkaConsumerRegistry {
-    private final Map<String, ObservableKafkaConsumer> consumerMap;
+public class KafkaConsumerRegistry<K, V> {
+    private final Map<String, QueuedKafkaConsumer<K, V>> consumerMap;
+    private final Collection<QueuedKafkaConsumer<K, V>> consumers;
 
     public KafkaConsumerRegistry() {
         this.consumerMap = new ConcurrentHashMap<>();
+        this.consumers = consumerMap.values();
     }
 
-    public ObservableKafkaConsumer get(String topic) {
+    public QueuedKafkaConsumer<K, V> get(String topic) {
         return consumerMap.get(topic);
     }
 
-    public void register(String topic, ObservableKafkaConsumer consumer) {
+    public void register(String topic, QueuedKafkaConsumer<K, V> consumer) {
         consumerMap.put(topic, consumer);
     }
 
-    public ObservableKafkaConsumer unregister(String topic) {
+    public QueuedKafkaConsumer<K, V> unregister(String topic) {
         return consumerMap.remove(topic);
     }
 
@@ -40,13 +41,7 @@ public class KafkaConsumerRegistry {
         return consumerMap.keySet();
     }
 
-    public Collection<ObservableKafkaConsumer> consumers() {
-        return consumerMap.values();
-    }
-
-    public boolean isReady(String topic) {
-        return Optional.of(consumerMap.get(topic))
-                .map(ObservableKafkaConsumer::isReady)
-                .orElse(false);
+    public Collection<QueuedKafkaConsumer<K, V>> consumers() {
+        return consumers;
     }
 }

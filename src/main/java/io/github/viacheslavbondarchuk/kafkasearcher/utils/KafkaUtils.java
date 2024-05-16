@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
 public final class KafkaUtils {
     private KafkaUtils() {}
 
+    public static ConsumerRecord<String, String> keepLatest(ConsumerRecord<String, String> r1, ConsumerRecord<String, String> r2) {
+        return r1.offset() > r2.offset() ? r1 : r2;
+    }
+
     public static String uniqueId(ConsumerRecord<?, ?> record) {
         return MessageFormat.format("{0}-{1}", String.valueOf(record.offset()), String.valueOf(record.partition()));
     }

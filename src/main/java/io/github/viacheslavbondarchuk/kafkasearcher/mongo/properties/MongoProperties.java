@@ -9,6 +9,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  **/
 
 @ConfigurationProperties("io.offer-searcher.mongodb")
-public record MongoProperties(String host, String database, String username, char[] password) {
+public record MongoProperties(String host, String database, String username, char[] password, int connectionPoolSize) {
 
 }

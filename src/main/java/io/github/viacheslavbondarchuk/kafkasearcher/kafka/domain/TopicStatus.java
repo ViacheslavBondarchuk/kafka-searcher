@@ -6,6 +6,6 @@ package io.github.viacheslavbondarchuk.kafkasearcher.kafka.domain;
  * time: 12:11 AM
  **/
 
-public record KafkaConsumerStatus(String topic, boolean ready, long remaining) {
+public record TopicStatus(String topic, boolean ready, long remaining) {
 
 }

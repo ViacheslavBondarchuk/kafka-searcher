@@ -7,7 +7,6 @@ package io.github.viacheslavbondarchuk.kafkasearcher.constants;
  **/
 
 public interface CommonConstants {
-    String UPDATES_PREFIX = "-updates";
 
     interface ValidationMessages {
         String TOPIC_VALIDATION_MESSAGE = "Topic is blank";

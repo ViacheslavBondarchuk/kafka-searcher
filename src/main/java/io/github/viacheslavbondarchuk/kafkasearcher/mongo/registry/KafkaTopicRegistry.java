@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -17,13 +18,13 @@ import java.util.stream.Stream;
 
 @Component
 public class KafkaTopicRegistry {
-    private final Set<String> topics;
+    private final Set<String> topics = ConcurrentHashMap.newKeySet();
 
     public KafkaTopicRegistry(KafkaTopicRepository repository) {
-        this.topics = repository.findAll()
+        repository.findAll()
                 .stream()
                 .map(KafkaTopic::name)
-                .collect(Collectors.toSet());
+                .forEach(topics::add);
     }
 
     public boolean contains(String topic) {
@@ -32,6 +33,10 @@ public class KafkaTopicRegistry {
 
     public Set<String> topics() {
         return Collections.unmodifiableSet(topics);
+    }
+
+    public void forEach(Consumer<String> consumer) {
+        topics.forEach(consumer);
     }
 
     public void add(String topic) {
