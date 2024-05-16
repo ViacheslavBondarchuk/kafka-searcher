@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -75,7 +76,7 @@ public final class KafkaMessageStoringProcessorImpl implements KafkaMessageProce
 
     @Override
     public void init() {
-        scheduler.scheduleAtFixedRate("handle-kafka-messages", this::handleKafkaMessages, 0, 2, SECONDS, errorHandler);
+        scheduler.scheduleAtFixedRate("handle-kafka-messages", this::handleKafkaMessages, 0, 500, MILLISECONDS, errorHandler);
     }
 
     private void storeToUpdates(Collection<ConsumerRecord<String, String>> records, String collectionName) {
