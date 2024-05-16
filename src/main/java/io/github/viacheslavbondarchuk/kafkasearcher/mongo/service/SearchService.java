@@ -41,6 +41,7 @@ public class SearchService {
     }
 
     public SearchResult<List<Document>> search(SearchRequest request) {
+        checkReadiness(request.topic());
         String collectionName = getCollectionName(request.searchType(), request.topic());
         return new SearchResult<>(
                 mongoTemplate.count(QueryUtils.countQuery(request), Document.class, collectionName),
