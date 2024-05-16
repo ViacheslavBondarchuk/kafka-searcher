@@ -14,4 +14,6 @@ import java.util.Map;
 public interface KafkaTopicStatusService {
 
     TopicStatus getTopicStatus(String topic);
+
+    boolean isReady(String topic);
 }

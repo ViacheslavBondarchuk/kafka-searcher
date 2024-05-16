@@ -53,16 +53,18 @@ public class KafkaTopicController implements Endpoint {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestParam(TOPIC) String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
-        kafkaTopicManagementService.register(topic);
-        kafkaConsumerManagementService.register(topic);
+        String trimmedTopicName = topic.trim();
+        kafkaTopicManagementService.register(trimmedTopicName);
+        kafkaConsumerManagementService.register(trimmedTopicName);
         return emptyOkResponse();
     }
 
     @PostMapping("/unregister")
     public ResponseEntity<?> unregister(@RequestParam(TOPIC) String topic, @RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
-        kafkaTopicManagementService.unregister(topic);
-        kafkaConsumerManagementService.unregister(topic);
+        String trimmedTopicName = topic.trim();
+        kafkaTopicManagementService.unregister(trimmedTopicName);
+        kafkaConsumerManagementService.unregister(trimmedTopicName);
         return emptyOkResponse();
     }
 }

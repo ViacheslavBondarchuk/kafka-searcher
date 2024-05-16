@@ -1,6 +1,6 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.mongo.service;
 
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.service.KafkaTopicStatusService;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.domain.SearchResult;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.QueryUtils;
@@ -23,11 +23,17 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchType
 @Service
 public class SearchService {
     private final MongoTemplate mongoTemplate;
-    private final KafkaConsumerRegistry<String, String> kafkaConsumerRegistry;
+    private final KafkaTopicStatusService statusService;
 
-    public SearchService(MongoTemplate mongoTemplate, KafkaConsumerRegistry<String, String> kafkaConsumerRegistry) {
+    public SearchService(MongoTemplate mongoTemplate, KafkaTopicStatusService statusService) {
         this.mongoTemplate = mongoTemplate;
-        this.kafkaConsumerRegistry = kafkaConsumerRegistry;
+        this.statusService = statusService;
+    }
+
+    private void checkReadiness(String topic) {
+        if (!statusService.isReady(topic)) {
+            throw new RuntimeException("No readiness available for topic: " + topic + ", topic still in process");
+        }
     }
 
     private String getCollectionName(SearchType searchType, String topic) {

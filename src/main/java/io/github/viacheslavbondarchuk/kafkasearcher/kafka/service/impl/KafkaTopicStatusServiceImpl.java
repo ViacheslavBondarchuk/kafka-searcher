@@ -46,4 +46,9 @@ public class KafkaTopicStatusServiceImpl implements KafkaTopicStatusService {
         long remaining = getRemaining(metadata.getMaxOffsets(), metadata.getCurrentOffsets());
         return new TopicStatus(topic, remaining == 0, remaining);
     }
+
+    @Override
+    public boolean isReady(String topic) {
+        return getTopicStatus(topic).ready();
+    }
 }
