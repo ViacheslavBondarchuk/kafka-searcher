@@ -3,6 +3,8 @@ package io.github.viacheslavbondarchuk.kafkasearcher.mongo.service.impl;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.domain.IndexDescription;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.service.IndexService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 
 @Service
 public final class IndexServiceImpl implements IndexService {
+    private static final Logger logger = LoggerFactory.getLogger(IndexServiceImpl.class);
+
     private final MongoTemplate mongoTemplate;
 
     public IndexServiceImpl(MongoTemplate mongoTemplate) {
@@ -46,10 +50,14 @@ public final class IndexServiceImpl implements IndexService {
 
     @Override
     public void dropIndex(String collection, String field) {
-        mongoTemplate.indexOps(collection)
-                .dropIndex(field);
-        mongoTemplate.indexOps(MongoCollections.makeUpdatesCollectionName(collection))
-                .dropIndex(field);
+        try {
+            mongoTemplate.indexOps(collection)
+                    .dropIndex(field);
+            mongoTemplate.indexOps(MongoCollections.makeUpdatesCollectionName(collection))
+                    .dropIndex(field);
+        } catch (Exception ex) {
+            logger.error("Could not drop index {} for collection {}. Error message {}", field, collection, ex.getMessage());
+        }
     }
 
     @Override
