@@ -1,6 +1,7 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.mongo.service;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -17,6 +18,7 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.Mongo
 @Service
 public class CollectionManagementService {
     private static final Set<String> systemCollections = Set.of(TOPICS, FIELDS);
+    private static final Query REMOVE_ALL_QUERY = new Query();
 
     private final MongoTemplate mongoTemplate;
 
@@ -25,6 +27,7 @@ public class CollectionManagementService {
     }
 
     public void dropCollection(String collectionName) {
+        mongoTemplate.remove(REMOVE_ALL_QUERY, collectionName);
         mongoTemplate.dropCollection(collectionName);
     }
 

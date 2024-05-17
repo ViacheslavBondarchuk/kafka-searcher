@@ -9,15 +9,14 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+
+import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.Field.ENTITY_ID;
 
 /**
  * author: vbondarchuk
@@ -27,17 +26,10 @@ import java.util.function.Consumer;
 
 @Component
 public class DocumentStorage {
-    public static final String MONGO_ID_KEY = "_id";
-    public static final String ENTITY_ID_KEY = "id";
-
-    private static final Query REMOVE_ALL_QUERY = Query.query(Criteria.where(MONGO_ID_KEY));
-
     private final MongoTemplate mongoTemplate;
-    private final TransactionTemplate transactionTemplate;
 
-    public DocumentStorage(MongoTemplate mongoTemplate, TransactionTemplate transactionTemplate) {
+    public DocumentStorage(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
-        this.transactionTemplate = transactionTemplate;
     }
 
     private Update createUpsertUpdate(Document document) {
@@ -46,17 +38,6 @@ public class DocumentStorage {
             update.set(entry.getKey(), entry.getValue());
         }
         return update;
-    }
-
-    public void executeInTransaction(Consumer<TransactionStatus> consumer) {
-        transactionTemplate.execute(status -> {
-            consumer.accept(status);
-            return null;
-        });
-    }
-
-    public void save(String topic, Document document) {
-        mongoTemplate.save(document, topic);
     }
 
     public void saveAll(String topic, Collection<Document> documents) {
@@ -68,7 +49,7 @@ public class DocumentStorage {
         List<Pair<Query, Update>> updates = new ArrayList<>();
         for (Document document : documents) {
             updates.add(Pair.of(
-                    Query.query(Criteria.where(MONGO_ID_KEY).is(DocumentUtils.id(document))),
+                    Query.query(Criteria.where(ENTITY_ID).is(DocumentUtils.id(document))),
                     createUpsertUpdate(document)
             ));
         }
@@ -76,16 +57,8 @@ public class DocumentStorage {
         bulkOperations.execute();
     }
 
-    public void remove(String topic, String id) {
-        mongoTemplate.remove(Query.query(Criteria.where(MONGO_ID_KEY).is(id)), topic);
-    }
-
     public void removeAll(String topic, Set<String> ids) {
-        mongoTemplate.remove(Query.query(Criteria.where(MONGO_ID_KEY).in(ids)), topic);
-    }
-
-    public void removeAll(String topic) {
-        mongoTemplate.remove(REMOVE_ALL_QUERY, topic);
+        mongoTemplate.remove(Query.query(Criteria.where(ENTITY_ID).in(ids)), topic);
     }
 
 }

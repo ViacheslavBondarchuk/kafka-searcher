@@ -18,6 +18,9 @@ public interface MongoCollections {
 
     interface Field {
         String FIELD = "field";
+        String MONGO_ID = "_id";
+        String ENTITY_ID = "id";
+        String SYSTEM_TIMESTAMP = "system.timestamp";
     }
 
     static String makeUpdatesCollectionName(String collectionName) {
