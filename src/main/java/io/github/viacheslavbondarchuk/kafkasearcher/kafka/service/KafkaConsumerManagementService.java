@@ -1,9 +1,11 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.kafka.service;
 
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.QueuedKafkaConsumer;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.factory.QueuedKafkaConsumerFactory;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ListenableKafkaConsumer;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.factory.ListenableKafkaConsumerFactory;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.impl.StoreToMongoMessageListener;
+import io.github.viacheslavbondarchuk.kafkasearcher.mongo.storage.DocumentStorage;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,27 +26,25 @@ public class KafkaConsumerManagementService {
     private static final Logger logger = LoggerFactory.getLogger(KafkaConsumerManagementService.class);
 
     private final KafkaConsumerRegistry<String, String> registry;
-    private final QueuedKafkaConsumerFactory factory;
+    private final ListenableKafkaConsumerFactory factory;
     private final ErrorHandler errorHandler;
-    private final KafkaTopicMetadataService topicMetadataService;
+    private final DocumentStorage documentStorage;
 
     public KafkaConsumerManagementService(KafkaConsumerRegistry<String, String> registry,
-                                          QueuedKafkaConsumerFactory factory,
+                                          ListenableKafkaConsumerFactory factory,
                                           ErrorHandler errorHandler,
-                                          KafkaTopicMetadataService topicMetadataService) {
+                                          DocumentStorage documentStorage) {
         this.registry = registry;
         this.factory = factory;
         this.errorHandler = errorHandler;
-        this.topicMetadataService = topicMetadataService;
+        this.documentStorage = documentStorage;
     }
-
 
     public void register(String topic) {
         logger.info("Registering topic: {}", topic);
         try {
-            QueuedKafkaConsumer<String, String> queuedKafkaConsumer = factory.newConsumer(topic);
-            topicMetadataService.updateMaxOffsets(topic, queuedKafkaConsumer.getMaxOffsets());
-            registry.register(topic, queuedKafkaConsumer);
+            ListenableKafkaConsumer<String, String> listenableKafkaConsumer = factory.newConsumer(topic, new StoreToMongoMessageListener(documentStorage));
+            registry.register(topic, listenableKafkaConsumer);
         } catch (Exception ex) {
             errorHandler.onError(ex);
         } finally {
@@ -55,8 +55,7 @@ public class KafkaConsumerManagementService {
     public void unregister(String topic) {
         logger.info("Unregistering topic: {}", topic);
         try {
-            QueuedKafkaConsumer<String, String> consumer = registry.unregister(topic);
-            topicMetadataService.remove(topic);
+            ListenableKafkaConsumer<String, String> consumer = registry.unregister(topic);
             ThreadUtils.sleep(Duration.of(1, ChronoUnit.SECONDS));
             consumer.close();
         } catch (Exception ex) {

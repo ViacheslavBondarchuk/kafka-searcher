@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public class LoggableErrorHandler implements ErrorHandler {
+public final class LoggableErrorHandler implements ErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(LoggableErrorHandler.class);
 
     @Override

@@ -9,10 +9,15 @@ package io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants;
 public interface MongoCollections {
     interface System {
         String TOPICS = "topics";
+        String FIELDS = "fields";
     }
 
     interface Prefix {
         String UPDATES_PREFIX = "-updates";
+    }
+
+    interface Field {
+        String FIELD = "field";
     }
 
     static String makeUpdatesCollectionName(String collectionName) {

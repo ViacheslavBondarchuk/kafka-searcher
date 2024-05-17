@@ -8,6 +8,7 @@ package io.github.viacheslavbondarchuk.kafkasearcher.utils;
 
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -64,6 +65,12 @@ public final class CommonUtils {
     public static <T> void arrayForEach(Consumer<T> consumer, T... values) {
         for (T value : values) {
             consumer.accept(value);
+        }
+    }
+
+    public static void acceptByPredicate(BooleanSupplier supplier, Runnable runnable) {
+        if (supplier.getAsBoolean()) {
+            runnable.run();
         }
     }
 

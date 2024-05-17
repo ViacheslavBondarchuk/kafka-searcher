@@ -10,7 +10,6 @@ import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumer
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,7 +37,7 @@ public final class KafkaMessagePollingProcessorImpl implements KafkaMessageProce
         this.executorServices = Executors.newVirtualThreadPerTaskExecutor();
         this.kafkaConsumerRegistry = kafkaConsumerRegistry;
         this.errorHandler = errorHandler;
-        this.scheduler = Scheduler.newScheduler(new SchedulerConfig("kafka-message-polling-processor", 1, new RejectingPolicy(), true));
+        this.scheduler = Scheduler.newScheduler(new SchedulerConfig("kafka-message-polling-processor", 1, new RejectingPolicy(), false));
     }
 
     @Override
@@ -48,10 +47,8 @@ public final class KafkaMessagePollingProcessorImpl implements KafkaMessageProce
     }
 
     private void pollMessages() {
-        CompletableFuture.allOf(kafkaConsumerRegistry.consumers()
-                .stream()
-                .map(consumer -> CompletableFuture.runAsync(consumer::poll, executorServices))
-                .toArray(CompletableFuture[]::new));
+        kafkaConsumerRegistry.consumers()
+                .forEach(listenableKafkaConsumer -> executorServices.submit(listenableKafkaConsumer::poll));
     }
 
 }

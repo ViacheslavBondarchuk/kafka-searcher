@@ -52,8 +52,6 @@ dependencies {
 
     implementation "uk.com.robust-it:cloning:${clonerVersion}"
     implementation "org.eclipse.collections:eclipse-collections:${eclipseCollections}"
-
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }
 
 dependencyManagement {

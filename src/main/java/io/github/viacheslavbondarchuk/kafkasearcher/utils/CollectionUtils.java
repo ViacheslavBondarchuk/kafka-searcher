@@ -1,10 +1,10 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.utils;
 
-import org.eclipse.collections.api.block.HashingStrategy;
-import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
-
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Queue;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -16,10 +16,12 @@ import java.util.function.Supplier;
 public final class CollectionUtils {
     private CollectionUtils() {}
 
-    public static <E> UnifiedSetWithHashingStrategy<E> compact(Iterable<E> iterable, HashingStrategy<E> strategy) {
-        UnifiedSetWithHashingStrategy<E> compacted = new UnifiedSetWithHashingStrategy<>(strategy);
-        iterable.forEach(compacted::addOrReplace);
-        return compacted;
+    public static <K, V> Collection<V> compact(Iterable<V> iterable, Function<V, K> keyFunction, BinaryOperator<V> merger) {
+        HashMap<K, V> hashMap = new HashMap<>();
+        for (V element : iterable) {
+            hashMap.merge(keyFunction.apply(element), element, merger);
+        }
+        return hashMap.values();
     }
 
     public static <V> Collection<V> drainTo(Queue<V> source, Collection<V> target, int limit) {

@@ -1,6 +1,6 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry;
 
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.QueuedKafkaConsumer;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ListenableKafkaConsumer;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -17,23 +17,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @SuppressWarnings({"rawtypes, unchecked"})
 public class KafkaConsumerRegistry<K, V> {
-    private final Map<String, QueuedKafkaConsumer<K, V>> consumerMap;
-    private final Collection<QueuedKafkaConsumer<K, V>> consumers;
+    private final Map<String, ListenableKafkaConsumer<K, V>> consumerMap;
+    private final Collection<ListenableKafkaConsumer<K, V>> consumers;
 
     public KafkaConsumerRegistry() {
         this.consumerMap = new ConcurrentHashMap<>();
         this.consumers = consumerMap.values();
     }
 
-    public QueuedKafkaConsumer<K, V> get(String topic) {
+    public ListenableKafkaConsumer<K, V> get(String topic) {
         return consumerMap.get(topic);
     }
 
-    public void register(String topic, QueuedKafkaConsumer<K, V> consumer) {
+    public void register(String topic, ListenableKafkaConsumer<K, V> consumer) {
         consumerMap.put(topic, consumer);
     }
 
-    public QueuedKafkaConsumer<K, V> unregister(String topic) {
+    public ListenableKafkaConsumer<K, V> unregister(String topic) {
         return consumerMap.remove(topic);
     }
 
@@ -41,7 +41,7 @@ public class KafkaConsumerRegistry<K, V> {
         return consumerMap.keySet();
     }
 
-    public Collection<QueuedKafkaConsumer<K, V>> consumers() {
+    public Collection<ListenableKafkaConsumer<K, V>> consumers() {
         return consumers;
     }
 }

@@ -3,6 +3,9 @@ package io.github.viacheslavbondarchuk.kafkasearcher.mongo.service;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
+import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.System.FIELDS;
 import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.System.TOPICS;
 
 /**
@@ -13,6 +16,8 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.Mongo
 
 @Service
 public class CollectionManagementService {
+    private static final Set<String> systemCollections = Set.of(TOPICS, FIELDS);
+
     private final MongoTemplate mongoTemplate;
 
     public CollectionManagementService(MongoTemplate mongoTemplate) {
@@ -34,7 +39,7 @@ public class CollectionManagementService {
 
     public void removeAllNonSystemCollections() {
         for (String collectionName : mongoTemplate.getCollectionNames()) {
-            if (!TOPICS.equals(collectionName)) {
+            if (!systemCollections.contains(collectionName)) {
                 dropCollection(collectionName);
             }
         }
