@@ -27,6 +27,12 @@ public class KafkaTopicRegistry {
                 .forEach(topics::add);
     }
 
+    public void exists(String topic) {
+        if (!contains(topic)) {
+            throw new RuntimeException("Topic " + topic + " does not exist");
+        }
+    }
+
     public boolean contains(String topic) {
         return topics.contains(topic);
     }

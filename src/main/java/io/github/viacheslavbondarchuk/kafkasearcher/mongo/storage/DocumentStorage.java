@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.Field.ENTITY_ID;
+import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.Field.MONGO_ID;
 
 /**
  * author: vbondarchuk
@@ -49,7 +49,7 @@ public class DocumentStorage {
         List<Pair<Query, Update>> updates = new ArrayList<>();
         for (Document document : documents) {
             updates.add(Pair.of(
-                    Query.query(Criteria.where(ENTITY_ID).is(DocumentUtils.id(document))),
+                    Query.query(Criteria.where(MONGO_ID).is(DocumentUtils.id(document))),
                     createUpsertUpdate(document)
             ));
         }
@@ -58,7 +58,7 @@ public class DocumentStorage {
     }
 
     public void removeAll(String topic, Set<String> ids) {
-        mongoTemplate.remove(Query.query(Criteria.where(ENTITY_ID).in(ids)), topic);
+        mongoTemplate.remove(Query.query(Criteria.where(MONGO_ID).in(ids)), topic);
     }
 
 }

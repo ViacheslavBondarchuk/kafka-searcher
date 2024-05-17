@@ -2,6 +2,8 @@ package io.github.viacheslavbondarchuk.kafkasearcher.utils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 
 /**
@@ -17,6 +19,20 @@ public final class DateTimeUtils {
 
     public static String format(long millis, DateFormat dateFormat) {
         return dateFormat.format(new Date(millis));
+    }
+
+    public static String format(Date date, DateFormat dateFormat) {
+        return dateFormat.format(date);
+    }
+
+    public static Date nowInUtc() {
+        return Date.from(LocalDateTime.now()
+                .atZone(ZoneOffset.UTC)
+                .toInstant());
+    }
+
+    public static Date now() {
+        return new Date();
     }
 
 }

@@ -19,6 +19,7 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConst
 import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.ValidationMessages.SKIP_VALIDATION_MESSAGE;
 import static io.github.viacheslavbondarchuk.kafkasearcher.constants.CommonConstants.ValidationMessages.TOPIC_VALIDATION_MESSAGE;
 import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.Field.MONGO_ID;
+import static io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections.Field.SYSTEM_LAST_UPDATE;
 import static io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchType.ACTUAL;
 
 /**

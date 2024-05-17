@@ -50,6 +50,7 @@ public class StatusController implements Endpoint {
     @GetMapping(path = "{topic}")
     public ResponseEntity<TopicStatus> status(@RequestHeader(SECRET_KEY) char[] secretKey, @PathVariable String topic) {
         authorizationService.check(secretKey);
+        topicRegistry.exists(topic);
         return ResponseEntity.ok(statusService.getTopicStatus(topic));
     }
 

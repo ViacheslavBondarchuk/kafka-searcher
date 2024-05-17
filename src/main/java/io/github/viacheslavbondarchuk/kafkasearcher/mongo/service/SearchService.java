@@ -3,6 +3,7 @@ package io.github.viacheslavbondarchuk.kafkasearcher.mongo.service;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.service.KafkaTopicStatusService;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.constants.MongoCollections;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.domain.SearchResult;
+import io.github.viacheslavbondarchuk.kafkasearcher.mongo.registry.KafkaTopicRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.QueryUtils;
 import io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchRequest;
 import io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchType;
@@ -24,10 +25,12 @@ import static io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchType
 public class SearchService {
     private final MongoTemplate mongoTemplate;
     private final KafkaTopicStatusService statusService;
+    private final KafkaTopicRegistry topicRegistry;
 
-    public SearchService(MongoTemplate mongoTemplate, KafkaTopicStatusService statusService) {
+    public SearchService(MongoTemplate mongoTemplate, KafkaTopicStatusService statusService, KafkaTopicRegistry topicRegistry) {
         this.mongoTemplate = mongoTemplate;
         this.statusService = statusService;
+        this.topicRegistry = topicRegistry;
     }
 
     private void checkReadiness(String topic) {
@@ -41,6 +44,7 @@ public class SearchService {
     }
 
     public SearchResult<List<Document>> search(SearchRequest request) {
+        topicRegistry.exists(request.topic());
         checkReadiness(request.topic());
         String collectionName = getCollectionName(request.searchType(), request.topic());
         return new SearchResult<>(

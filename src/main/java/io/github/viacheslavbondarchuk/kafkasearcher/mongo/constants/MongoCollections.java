@@ -21,6 +21,7 @@ public interface MongoCollections {
         String MONGO_ID = "_id";
         String ENTITY_ID = "id";
         String SYSTEM_TIMESTAMP = "system.timestamp";
+        String SYSTEM_LAST_UPDATE = "system.lastUpdate";
     }
 
     static String makeUpdatesCollectionName(String collectionName) {

@@ -1,6 +1,7 @@
 package io.github.viacheslavbondarchuk.kafkasearcher.web.controller;
 
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.domain.SearchResult;
+import io.github.viacheslavbondarchuk.kafkasearcher.mongo.registry.KafkaTopicRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.service.SearchService;
 import io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchRequest;
 import io.github.viacheslavbondarchuk.kafkasearcher.web.domain.SearchResponse;
@@ -31,16 +32,19 @@ public class SearchController implements Endpoint {
     private static final Logger log = LoggerFactory.getLogger(SearchController.class);
 
     private final SearchService searchService;
+    private final KafkaTopicRegistry topicRegistry;
     private final AuthorizationService authorizationService;
 
-    public SearchController(SearchService searchService, AuthorizationService authorizationService) {
+    public SearchController(SearchService searchService, KafkaTopicRegistry topicRegistry, AuthorizationService authorizationService) {
         this.searchService = searchService;
+        this.topicRegistry = topicRegistry;
         this.authorizationService = authorizationService;
     }
 
     @PostMapping
     public SearchResponse<List<Document>> search(@RequestBody @Validated SearchRequest searchRequest, @RequestHeader(SECRET_KEY) char[] secretKey) {
         authorizationService.check(secretKey);
+        topicRegistry.exists(searchRequest.topic());
         log.info("Searching in topic: {}, request: {}", searchRequest.topic(), searchRequest);
         SearchResult<List<Document>> searchResult = searchService.search(searchRequest);
         log.info("Hits: {}, for request: {}", searchResult.hits(), searchRequest);

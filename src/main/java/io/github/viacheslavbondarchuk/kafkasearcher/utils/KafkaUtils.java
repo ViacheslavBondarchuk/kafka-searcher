@@ -27,6 +27,15 @@ public final class KafkaUtils {
         return r1.offset() > r2.offset() ? r1 : r2;
     }
 
+    public static String uniqueId(ConsumerRecord<?, ?> record) {
+        return MessageFormat.format("{0}-{1}", String.valueOf(record.offset()), String.valueOf(record.partition()));
+    }
+
+    public static String getKey(ConsumerRecord<String, String> record) {
+        return record.key();
+    }
+
+
     public static Set<String> ids(Collection<ConsumerRecord<String, String>> records) {
         return records.stream()
                 .map(ConsumerRecord::key)

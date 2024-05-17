@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 public final class StoreToMongoMessageListener implements KafkaMessageListener<String, String> {
     private static final Logger logger = LoggerFactory.getLogger(StoreToMongoMessageListener.class);
+
     private final DocumentStorage documentStorage;
 
     public StoreToMongoMessageListener(DocumentStorage documentStorage) {
@@ -31,8 +32,8 @@ public final class StoreToMongoMessageListener implements KafkaMessageListener<S
     }
 
     private void storeToUpdates(List<ConsumerRecord<String, String>> messages, String topic) {
-        List<Document> documents = DocumentUtils.fromRecords(messages);
-        documentStorage.saveAll(MongoCollections.makeUpdatesCollectionName(topic), documents);
+        List<Document> documents = DocumentUtils.fromRecords(KafkaUtils::uniqueId, messages);
+        documentStorage.upsertAll(MongoCollections.makeUpdatesCollectionName(topic), documents);
     }
 
     private void storeToLatest(Collection<ConsumerRecord<String, String>> records, String topic) {
@@ -42,7 +43,7 @@ public final class StoreToMongoMessageListener implements KafkaMessageListener<S
 
         List<ConsumerRecord<String, String>> recordsToSave = partitioned.get(true);
         if (recordsToSave != null && !recordsToSave.isEmpty()) {
-            documentStorage.upsertAll(topic, DocumentUtils.fromRecords(recordsToSave));
+            documentStorage.upsertAll(topic, DocumentUtils.fromRecords(KafkaUtils::getKey, recordsToSave));
         }
 
         List<ConsumerRecord<String, String>> recordsToRemove = partitioned.get(false);
