@@ -14,6 +14,4 @@ public interface ListenableKafkaConsumer<K, V> extends Closeable, AutoCloseable 
 
     String getTopic();
 
-    boolean isReadyToPoll();
-
 }

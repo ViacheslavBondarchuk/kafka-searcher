@@ -4,7 +4,6 @@ import io.github.viacheslavbondarchuk.kafkasearcher.async.config.SchedulerConfig
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.policy.RejectingPolicy;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.scheduler.Scheduler;
-import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ListenableKafkaConsumer;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.processor.KafkaMessageProcessor;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaSchedulerProperties;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
@@ -48,11 +47,8 @@ public final class KafkaMessagePollingProcessorImpl implements KafkaMessageProce
     }
 
     private void pollMessages() {
-        for (ListenableKafkaConsumer<String, String> listenableKafkaConsumer : kafkaConsumerRegistry.consumers()) {
-            if (listenableKafkaConsumer.isReadyToPoll()) {
-                executorServices.submit(listenableKafkaConsumer::poll);
-            }
-        }
+        kafkaConsumerRegistry.consumers()
+                .forEach(listenableKafkaConsumer -> executorServices.submit(listenableKafkaConsumer::poll));
     }
 
 }

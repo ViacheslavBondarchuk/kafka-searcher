@@ -61,30 +61,27 @@ public class ListenableKafkaConsumerImpl<K, V> implements ListenableKafkaConsume
 
     @Override
     public void poll() {
-        try {
-            isReadyToPoll = false;
-            ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
-            if (!records.isEmpty()) {
-                listener.onMessages(StreamSupport.stream(records.spliterator(), false)
-                        .peek(record -> topicMetadataService.updateCurrentOffsets(topic, createTopicPartition(record), record.offset()))
-                        .toList(), topic);
-                consumer.commitSync();
+        if (isReadyToPoll) {
+            try {
+                isReadyToPoll = false;
+                ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
+                if (!records.isEmpty()) {
+                    listener.onMessages(StreamSupport.stream(records.spliterator(), false)
+                            .peek(record -> topicMetadataService.updateCurrentOffsets(topic, createTopicPartition(record), record.offset()))
+                            .toList(), topic);
+                    consumer.commitSync();
+                }
+            } catch (Exception ex) {
+                errorHandler.onError(ex);
+            } finally {
+                isReadyToPoll = true;
             }
-        } catch (Exception ex) {
-            errorHandler.onError(ex);
-        } finally {
-            isReadyToPoll = true;
         }
     }
 
     @Override
     public String getTopic() {
         return topic;
-    }
-
-    @Override
-    public boolean isReadyToPoll() {
-        return isReadyToPoll;
     }
 
     @Override
