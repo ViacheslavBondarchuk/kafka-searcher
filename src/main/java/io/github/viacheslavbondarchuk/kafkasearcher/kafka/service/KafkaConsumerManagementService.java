@@ -5,10 +5,12 @@ import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ListenableKaf
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.factory.ListenableKafkaConsumerFactory;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.subscriber.impl.StoreToMongoMessageListener;
+import io.github.viacheslavbondarchuk.kafkasearcher.mongo.service.IndexService;
 import io.github.viacheslavbondarchuk.kafkasearcher.mongo.storage.DocumentStorage;
 import io.github.viacheslavbondarchuk.kafkasearcher.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -29,21 +31,28 @@ public class KafkaConsumerManagementService {
     private final ListenableKafkaConsumerFactory factory;
     private final ErrorHandler errorHandler;
     private final DocumentStorage documentStorage;
+    private final IndexService indexService;
+    private final Duration documentsRetention;
 
     public KafkaConsumerManagementService(KafkaConsumerRegistry<String, String> registry,
                                           ListenableKafkaConsumerFactory factory,
                                           ErrorHandler errorHandler,
-                                          DocumentStorage documentStorage) {
+                                          DocumentStorage documentStorage,
+                                          IndexService indexService,
+                                          @Value("${io.offer-searcher.documents.retention}") Duration documentsRetention) {
         this.registry = registry;
         this.factory = factory;
         this.errorHandler = errorHandler;
         this.documentStorage = documentStorage;
+        this.indexService = indexService;
+        this.documentsRetention = documentsRetention;
     }
 
     public void register(String topic) {
         logger.info("Registering topic: {}", topic);
         try {
-            ListenableKafkaConsumer<String, String> listenableKafkaConsumer = factory.newConsumer(topic, new StoreToMongoMessageListener(documentStorage));
+            ListenableKafkaConsumer<String, String> listenableKafkaConsumer = factory.newConsumer(topic,
+                    new StoreToMongoMessageListener(documentStorage, indexService, documentsRetention, topic));
             registry.register(topic, listenableKafkaConsumer);
         } catch (Exception ex) {
             errorHandler.onError(ex);

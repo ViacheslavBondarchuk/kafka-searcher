@@ -4,6 +4,7 @@ import io.github.viacheslavbondarchuk.kafkasearcher.async.config.SchedulerConfig
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.policy.RejectingPolicy;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.scheduler.Scheduler;
+import io.github.viacheslavbondarchuk.kafkasearcher.kafka.consumer.ListenableKafkaConsumer;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.processor.KafkaMessageProcessor;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.properties.KafkaSchedulerProperties;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.registry.KafkaConsumerRegistry;
@@ -34,7 +35,7 @@ public final class KafkaMessagePollingProcessorImpl implements KafkaMessageProce
                                             KafkaSchedulerProperties kafkaSchedulerProperties,
                                             ErrorHandler errorHandler) {
         this.kafkaSchedulerProperties = kafkaSchedulerProperties;
-        this.executorServices = Executors.newVirtualThreadPerTaskExecutor();
+        this.executorServices = Executors.newFixedThreadPool(kafkaSchedulerProperties.parallelism());
         this.kafkaConsumerRegistry = kafkaConsumerRegistry;
         this.errorHandler = errorHandler;
         this.scheduler = Scheduler.newScheduler(new SchedulerConfig("kafka-message-polling-processor", 1, new RejectingPolicy(), false));
@@ -47,8 +48,11 @@ public final class KafkaMessagePollingProcessorImpl implements KafkaMessageProce
     }
 
     private void pollMessages() {
-        kafkaConsumerRegistry.consumers()
-                .forEach(listenableKafkaConsumer -> executorServices.submit(listenableKafkaConsumer::poll));
+        for (ListenableKafkaConsumer<String, String> listenableKafkaConsumer : kafkaConsumerRegistry.consumers()) {
+            if (listenableKafkaConsumer.isReadyToPoll()) {
+                executorServices.submit(listenableKafkaConsumer::poll);
+            }
+        }
     }
 
 }
