@@ -2,6 +2,7 @@ package io.github.viacheslavbondarchuk.kafkasearcher.kafka.processor.impl;
 
 import io.github.viacheslavbondarchuk.kafkasearcher.async.config.SchedulerConfig;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.handler.ErrorHandler;
+import io.github.viacheslavbondarchuk.kafkasearcher.async.policy.BlockingPolicy;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.policy.RejectingPolicy;
 import io.github.viacheslavbondarchuk.kafkasearcher.async.scheduler.Scheduler;
 import io.github.viacheslavbondarchuk.kafkasearcher.kafka.processor.KafkaMessageProcessor;
@@ -12,8 +13,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * author: vbondarchuk
@@ -34,7 +38,8 @@ public final class KafkaMessagePollingProcessorImpl implements KafkaMessageProce
                                             KafkaSchedulerProperties kafkaSchedulerProperties,
                                             ErrorHandler errorHandler) {
         this.kafkaSchedulerProperties = kafkaSchedulerProperties;
-        this.executorServices = Executors.newFixedThreadPool(kafkaSchedulerProperties.parallelism());
+        this.executorServices = new ThreadPoolExecutor(kafkaSchedulerProperties.parallelism(), kafkaSchedulerProperties.parallelism(),
+                0L, MILLISECONDS, new LinkedBlockingQueue<>(kafkaSchedulerProperties.parallelism()), new BlockingPolicy(15, MINUTES));
         this.kafkaConsumerRegistry = kafkaConsumerRegistry;
         this.errorHandler = errorHandler;
         this.scheduler = Scheduler.newScheduler(new SchedulerConfig("kafka-message-polling-processor", 1, new RejectingPolicy(), false));
